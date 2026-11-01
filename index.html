@@ -1,0 +1,167 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediVision AI</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Manrope, Arial, sans-serif;
+      color: white;
+      background:
+        radial-gradient(circle at 4% 8%, #08bcd2 0%, transparent 25%),
+        radial-gradient(circle at 95% 89%, #0aafb2 0%, transparent 22%),
+        radial-gradient(circle at 38% 75%, #0b3174 0%, transparent 25%),
+        linear-gradient(135deg, #041b4a, #04020f 55%, #000 100%);
+    }
+
+    .home-page {
+      min-height: 100vh;
+      padding: 35px 20px 55px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .content {
+      width: 100%;
+      max-width: 1050px;
+    }
+
+    .logo-box {
+      width: min(680px, 86vw);
+      height: 430px;
+      margin: auto auto 32px;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 85px;
+      background: linear-gradient(135deg, white, #d8d8d8);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.4);
+    }
+
+    .logo-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      font-family: "Berkshire Swash", cursive;
+      font-size: clamp(22px, 3vw, 31px);
+      text-decoration: underline;
+      text-underline-offset: 7px;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Berkshire Swash", cursive;
+      font-size: clamp(48px, 7vw, 86px);
+      font-weight: 400;
+      line-height: 1.1;
+      text-decoration: underline;
+      text-underline-offset: 10px;
+    }
+
+    .subtitle {
+      margin: 28px auto 40px;
+      max-width: 1100px;
+      font-family: "Berkshire Swash", cursive;
+      font-size: clamp(20px, 2.3vw, 31px);
+      line-height: 1.45;
+      text-decoration: underline;
+      text-underline-offset: 6px;
+    }
+
+    .lets-go {
+      display: inline-flex;
+      align-items: center;
+      gap: 16px;
+      padding: 7px 8px 7px 34px;
+      color: black;
+      background: linear-gradient(90deg, #ffe265, #ffc34c, #ff8e43);
+      border-radius: 99px;
+      font-family: "Berkshire Swash", cursive;
+      font-size: clamp(30px, 4vw, 48px);
+      text-decoration: none;
+    }
+
+    .arrow-circle {
+      width: 88px;
+      height: 88px;
+      display: grid;
+      place-items: center;
+      color: #d6e0e5;
+      background: #020207;
+      border-radius: 50%;
+      font-family: Arial, sans-serif;
+      font-size: 63px;
+    }
+
+    .disclaimer {
+      max-width: 690px;
+      margin: 28px auto 0;
+      color: #c6e3e2;
+      font-size: 10px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 650px) {
+      .home-page { padding: 30px 16px 45px; }
+
+      .logo-box {
+        height: 270px;
+        border-radius: 48px;
+      }
+
+      .arrow-circle {
+        width: 65px;
+        height: 65px;
+        font-size: 46px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="home-page">
+    <section class="content">
+
+      <div class="logo-box">
+        <img src="Modern minimalist business logo.png" alt="MediVision AI logo">
+      </div>
+
+      <p class="eyebrow">Educational Medical Imaging Platform</p>
+
+      <h1>MediVision AI</h1>
+
+      <p class="subtitle">
+        An AI-Powered Medical Imaging Assistant for learning,
+        research, and thoughtful exploration.
+      </p>
+
+      <a href="categories.html" class="lets-go">
+        Let's Go
+        <span class="arrow-circle">➜</span>
+      </a>
+
+      <p class="disclaimer">
+        Educational and research prototype only. This platform does not diagnose
+        conditions, interpret personal scans, or replace medical professionals.
+      </p>
+
+    </section>
+  </main>
+</body>
+</html>

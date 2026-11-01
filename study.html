@@ -1,0 +1,125 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Phase | MediVision AI</title>
+    <link rel="stylesheet" href="study-style.css">
+</head>
+<body class="study-page">
+
+<header class="study-navbar">
+    <a href="index.html" class="brand">MediVision <span>AI</span></a>
+    <a href="index.html" class="back-home">← Back Home</a>
+</header>
+
+<main class="curriculum-container">
+
+    <div class="curriculum-heading">
+        <p class="eyebrow">MEDIVISION AI · LEARNING SPACE</p>
+        <h1>Study Phase</h1>
+        <p>Explore medical imaging concepts through structured learning modules.</p>
+    </div>
+
+    <div class="overall-progress">
+        <div>
+            <strong>YOUR LEARNING PROGRESS</strong>
+            <span id="overall-count">0 of 18 lessons completed</span>
+        </div>
+        <div class="progress-track">
+            <div id="overall-bar"></div>
+        </div>
+    </div>
+
+    <div id="curriculum"></div>
+
+</main>
+
+<script src="study-data.js"></script>
+<script>
+const container = document.getElementById("curriculum");
+const completed = JSON.parse(localStorage.getItem("mediVisionCompleted") || "[]");
+
+function updateProgress() {
+    const total = studyParts.reduce((sum, part) => sum + part.lessons.length, 0);
+    const count = completed.length;
+    document.getElementById("overall-count").textContent =
+        `${count} of ${total} lessons completed`;
+    document.getElementById("overall-bar").style.width =
+        `${total ? (count / total) * 100 : 0}%`;
+
+    document.querySelectorAll(".part-card").forEach(card => {
+        const lessons = card.querySelectorAll(".lesson-row").length;
+        const done = card.querySelectorAll(".lesson-check:checked").length;
+        card.querySelector(".part-progress").textContent =
+            `${done} of ${lessons} lessons complete`;
+    });
+}
+
+studyParts.forEach((part, index) => {
+    const section = document.createElement("details");
+    section.className = "part-card";
+
+    const doneCount = part.lessons.filter(
+        lesson => completed.includes(lesson.id)
+    ).length;
+
+    section.innerHTML = `
+        <summary class="part-summary">
+            <span class="part-arrow">›</span>
+            <span class="part-circle"></span>
+            <span class="part-title">${part.title}</span>
+            <span class="part-progress">
+                ${doneCount} of ${part.lessons.length} lessons complete
+            </span>
+        </summary>
+        <div class="lesson-list"></div>
+    `;
+
+    const lessonList = section.querySelector(".lesson-list");
+
+    part.lessons.forEach(lesson => {
+        const row = document.createElement("div");
+        row.className = "lesson-row";
+
+        const isDone = completed.includes(lesson.id);
+
+        row.innerHTML = `
+            <input class="lesson-check" type="checkbox"
+                ${isDone ? "checked" : ""}
+                aria-label="Mark ${lesson.title} complete">
+            <a class="lesson-link" href="lesson.html?id=${lesson.id}">
+                ${lesson.title}
+            </a>
+            <span class="lesson-type">THEORY</span>
+        `;
+
+        const checkbox = row.querySelector("input");
+
+        checkbox.addEventListener("change", () => {
+            if (checkbox.checked && !completed.includes(lesson.id)) {
+                completed.push(lesson.id);
+            } else {
+                const position = completed.indexOf(lesson.id);
+                if (position !== -1) completed.splice(position, 1);
+            }
+
+            localStorage.setItem(
+                "mediVisionCompleted",
+                JSON.stringify(completed)
+            );
+            updateProgress();
+        });
+
+        lessonList.appendChild(row);
+    });
+
+    container.appendChild(section);
+});
+
+updateProgress();
+</script>
+
+</body>
+</html>

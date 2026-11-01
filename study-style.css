@@ -1,0 +1,391 @@
+
+/* =========================================
+   MEDIVISION AI - STUDY PHASE THEME
+========================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.study-page {
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    color: #ffffff;
+    background:
+        radial-gradient(ellipse at 5% 5%, #087c85 0%, transparent 35%),
+        radial-gradient(ellipse at 95% 95%, #087c85 0%, transparent 35%),
+        linear-gradient(135deg, #071a28, #061321 65%, #082d39);
+}
+
+/* NAVIGATION */
+
+.study-navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 7%;
+    background: rgba(5, 20, 32, 0.75);
+    border-bottom: 1px solid rgba(57, 215, 195, 0.2);
+    backdrop-filter: blur(15px);
+}
+
+.brand {
+    text-decoration: none;
+    font-size: 23px;
+    font-weight: bold;
+    color: white;
+}
+
+.brand span {
+    color: #39d7c3;
+}
+
+.back-home {
+    color: white;
+    text-decoration: none;
+    border: 1px solid #3b6874;
+    padding: 11px 20px;
+    border-radius: 30px;
+    transition: 0.3s;
+}
+
+.back-home:hover {
+    background: #39d7c3;
+    color: #071a28;
+    border-color: #39d7c3;
+}
+
+/* MAIN HEADING */
+
+.curriculum-container {
+    max-width: 1150px;
+    margin: 65px auto;
+    padding: 0 25px;
+}
+
+.curriculum-heading {
+    text-align: center;
+    margin-bottom: 45px;
+}
+
+.eyebrow {
+    color: #39d7c3;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 3px;
+}
+
+.curriculum-heading h1 {
+    font-size: 46px;
+    margin: 18px 0;
+    background: linear-gradient(90deg, #ffffff, #39d7c3);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.curriculum-heading p:last-child {
+    color: #bdd3dc;
+    font-size: 16px;
+}
+
+/* PROGRESS PANEL */
+
+.overall-progress {
+    padding: 25px;
+    margin-bottom: 30px;
+    border-radius: 16px;
+    background: rgba(14, 54, 68, 0.85);
+    border: 1px solid rgba(57, 215, 195, 0.3);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+}
+
+.overall-progress div:first-child {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 16px;
+}
+
+.overall-progress strong {
+    color: #39d7c3;
+    letter-spacing: 1px;
+    font-size: 13px;
+}
+
+.overall-progress span {
+    color: #d4e9ec;
+    font-size: 13px;
+}
+
+.progress-track {
+    height: 9px;
+    border-radius: 20px;
+    overflow: hidden;
+    background: #173c49;
+}
+
+#overall-bar {
+    height: 100%;
+    width: 0%;
+    border-radius: 20px;
+    background: linear-gradient(90deg, #0caaa9, #39e5c5);
+    box-shadow: 0 0 12px rgba(57, 215, 195, 0.5);
+    transition: width 0.4s ease;
+}
+
+/* PART ACCORDION */
+
+.part-card {
+    background: rgba(10, 31, 46, 0.93);
+    border: 1px solid rgba(112, 177, 185, 0.25);
+    border-radius: 13px;
+    margin-bottom: 15px;
+    overflow: hidden;
+    transition: 0.3s ease;
+}
+
+.part-card:hover {
+    border-color: #39d7c3;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.part-summary {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 23px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.part-summary::-webkit-details-marker {
+    display: none;
+}
+
+.part-arrow {
+    color: #39d7c3;
+    font-size: 29px;
+    transition: transform 0.3s;
+}
+
+.part-card[open] .part-arrow {
+    transform: rotate(90deg);
+}
+
+.part-circle {
+    width: 19px;
+    height: 19px;
+    border: 2px solid #75cfc9;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.part-title {
+    color: #f2ffff;
+    font-size: 18px;
+    font-weight: 600;
+    flex: 1;
+}
+
+.part-progress {
+    color: #9ac7ca;
+    font-size: 13px;
+}
+
+/* EXPANDED LESSON AREA */
+
+.lesson-list {
+    padding: 12px 25px 18px 65px;
+    border-top: 1px solid rgba(57, 215, 195, 0.2);
+    background: rgba(4, 20, 33, 0.55);
+}
+
+.lesson-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 17px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    transition: 0.2s;
+}
+
+.lesson-row:last-child {
+    border-bottom: none;
+}
+
+.lesson-row:hover {
+    background: rgba(57, 215, 195, 0.07);
+    border-radius: 8px;
+}
+
+.lesson-check {
+    width: 19px;
+    height: 19px;
+    accent-color: #39d7c3;
+    cursor: pointer;
+}
+
+.lesson-link {
+    flex: 1;
+    color: #e5f6f7;
+    font-size: 16px;
+    text-decoration: none;
+    transition: 0.2s;
+}
+
+.lesson-link:hover {
+    color: #39d7c3;
+}
+
+/* THEORY / WORKSHOP LABELS */
+
+.lesson-type {
+    color: #f5d477;
+    border: 1px solid #d8b94d;
+    background: rgba(216, 185, 77, 0.1);
+    padding: 4px 11px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+/* INDIVIDUAL LESSON PAGE */
+
+.lesson-container {
+    max-width: 950px;
+    margin: 65px auto;
+    padding: 0 25px;
+}
+
+.lesson-container > h1 {
+    color: #39d7c3;
+    font-size: 38px;
+    line-height: 1.3;
+    margin: 18px 0 35px;
+}
+
+/* COLOURFUL CONTENT DIALOGUE BOXES */
+
+.lesson-content-card {
+    position: relative;
+    background: linear-gradient(135deg, #f0fbfa, #dcefed);
+    color: #123746;
+    padding: 30px;
+    margin-bottom: 22px;
+    border-radius: 15px;
+    border: 1px solid #a8ded8;
+    border-left: 5px solid #16b8aa;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.17);
+    transition: transform 0.25s, box-shadow 0.25s;
+}
+
+.lesson-content-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 35px rgba(0, 0, 0, 0.23);
+}
+
+.lesson-content-card h2 {
+    color: #087f83;
+    font-size: 21px;
+    margin-bottom: 15px;
+}
+
+.lesson-content-card p {
+    color: #315565;
+    font-size: 16px;
+    line-height: 1.9;
+}
+
+/* LESSON BUTTONS */
+
+.lesson-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 35px;
+}
+
+.complete-button {
+    border: none;
+    padding: 13px 22px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #0ca9a6, #39d7c3);
+    color: #06232d;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.complete-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(57, 215, 195, 0.3);
+}
+
+.complete-button.is-completed {
+    background: #c5f3e7;
+    color: #087b70;
+}
+
+.educational-note {
+    color: #a9c5cc;
+    font-size: 12px;
+    margin-top: 35px;
+    line-height: 1.8;
+}
+
+/* RESPONSIVE DESIGN */
+
+@media (max-width: 700px) {
+
+    .study-navbar {
+        padding: 17px 5%;
+    }
+
+    .brand {
+        font-size: 19px;
+    }
+
+    .curriculum-heading h1 {
+        font-size: 34px;
+    }
+
+    .part-summary {
+        gap: 10px;
+        padding: 18px 13px;
+        flex-wrap: wrap;
+    }
+
+    .part-title {
+        font-size: 15px;
+    }
+
+    .part-progress {
+        width: 100%;
+        padding-left: 40px;
+    }
+
+    .lesson-list {
+        padding: 10px 12px;
+    }
+
+    .lesson-row {
+        flex-wrap: wrap;
+    }
+
+    .lesson-link {
+        font-size: 14px;
+    }
+
+    .lesson-container > h1 {
+        font-size: 29px;
+    }
+
+    .lesson-content-card {
+        padding: 22px;
+    }
+}

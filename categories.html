@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Choose a Category | MediVision AI</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: white;
+      font-family: Manrope, Arial, sans-serif;
+      background:
+        radial-gradient(circle at 8% 10%, #0cc7d5 0%, transparent 22%),
+        radial-gradient(circle at 89% 84%, #12a6ad 0%, transparent 23%),
+        linear-gradient(135deg, #052e3d, #071726 52%, #020407);
+    }
+
+    .page {
+      min-height: 100vh;
+      padding: 28px 7% 70px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 65px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .brand img {
+      width: 43px;
+      height: 43px;
+      padding: 3px;
+      object-fit: contain;
+      border-radius: 12px;
+      background: white;
+    }
+
+    .brand b {
+      color: #43e4cc;
+    }
+
+    .back-button {
+      padding: 10px 15px;
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .heading {
+      max-width: 730px;
+      margin: 0 auto 42px;
+      text-align: center;
+    }
+
+    .heading p {
+      margin: 0 0 12px;
+      color: #7ff1df;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Berkshire Swash", cursive;
+      font-size: clamp(42px, 6vw, 72px);
+      font-weight: 400;
+      line-height: 1.1;
+    }
+
+    h1 span {
+      color: #42dfc7;
+    }
+
+    .heading .description {
+      max-width: 570px;
+      margin: 18px auto 0;
+      color: #c4dddf;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .cards {
+      max-width: 1260px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 19px;
+    }
+
+    .card {
+      overflow: hidden;
+      color: #10303b;
+      border-radius: 23px;
+      background: #f4fbfa;
+      text-decoration: none;
+      box-shadow: 0 18px 35px rgba(0, 0, 0, 0.18);
+    }
+
+    .card-image {
+      height: 180px;
+      position: relative;
+      overflow: hidden;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .card-image::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(5, 43, 56, 0.45), transparent);
+    }
+
+    .study-image {
+      background-image:
+        url("https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=900&q=80");
+    }
+
+    .tumor-image {
+      background-image:
+        url("https://images.unsplash.com/photo-1530497610245-94d3c16cda28?auto=format&fit=crop&w=900&q=80");
+    }
+
+    .report-image {
+      background-image:
+        url("https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=900&q=80");
+    }
+
+    .card-number {
+      position: absolute;
+      left: 18px;
+      bottom: 15px;
+      z-index: 1;
+      color: white;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+    }
+
+    .card-content {
+      padding: 23px 25px 26px;
+    }
+
+    .icon {
+      width: 43px;
+      height: 43px;
+      display: grid;
+      place-items: center;
+      margin-top: -44px;
+      margin-bottom: 22px;
+      position: relative;
+      z-index: 2;
+      color: #087f83;
+      border-radius: 13px;
+      background: #d9f3ee;
+      font-size: 21px;
+    }
+
+    .card h2 {
+      margin: 0 0 11px;
+      font-size: 27px;
+      letter-spacing: -0.06em;
+    }
+
+    .card p {
+      min-height: 63px;
+      margin: 0;
+      color: #5d747d;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .open-link {
+      display: inline-block;
+      margin-top: 21px;
+      color: #087e83;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .notice {
+      max-width: 760px;
+      margin: 45px auto 0;
+      color: #b5d7d7;
+      font-size: 10px;
+      line-height: 1.7;
+      text-align: center;
+    }
+
+    @media (max-width: 850px) {
+      .cards {
+        grid-template-columns: 1fr;
+        max-width: 500px;
+      }
+
+      .card-image {
+        height: 210px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .page {
+        padding: 22px 18px 50px;
+      }
+
+      header {
+        margin-bottom: 45px;
+      }
+
+      .brand span {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+
+    <header>
+      <a class="brand" href="index.html">
+        <img src="Modern minimalist business logo.png" alt="MediVision AI logo">
+        <span>MediVision <b>AI</b></span>
+      </a>
+
+      <a class="back-button" href="index.html">← Back Home</a>
+    </header>
+
+    <section class="heading">
+      <p>Choose your workspace</p>
+
+      <h1>Explore <span>MediVision AI</span></h1>
+
+      <p class="description">
+        Select one educational workspace to begin your learning journey.
+      </p>
+    </section>
+
+    <section class="cards">
+
+      <!-- Opens Study Phase page -->
+      <a class="card" href="study.html">
+        <div class="card-image study-image">
+          <span class="card-number">01 · LEARN</span>
+        </div>
+
+        <div class="card-content">
+          <div class="icon">⌁</div>
+          <h2>Study Phase</h2>
+          <p>
+            Learn medical-imaging foundations through guided modules,
+            progress tracking, and interactive quizzes.
+          </p>
+          <span class="open-link">Open Study Phase →</span>
+        </div>
+      </a>
+
+      <!-- Opens TumorVision AI page -->
+      <a class="card" href="tumorvision.html">
+        <div class="card-image tumor-image">
+          <span class="card-number">02 · EXPLORE</span>
+        </div>
+
+        <div class="card-content">
+          <div class="icon">✦</div>
+          <h2>TumorVision AI</h2>
+          <p>
+            Explore educational research concepts, visual examples,
+            and future AI learning activities.
+          </p>
+          <span class="open-link">Open TumorVision AI →</span>
+        </div>
+      </a>
+
+      <!-- Opens Scan Report AI page -->
+      <a class="card" href="scan-report.html">
+        <div class="card-image report-image">
+          <span class="card-number">03 · REVIEW</span>
+        </div>
+
+        <div class="card-content">
+          <div class="icon">▤</div>
+          <h2>Scan Report AI</h2>
+          <p>
+            Learn the structure and language used in educational
+            sample medical-imaging reports.
+          </p>
+          <span class="open-link">Open Scan Report AI →</span>
+        </div>
+      </a>
+
+    </section>
+
+    <p class="notice">
+      Educational and research prototype only. MediVision AI does not diagnose
+      conditions, analyze personal scans, or replace qualified medical professionals.
+    </p>
+
+  </main>
+</body>
+</html>

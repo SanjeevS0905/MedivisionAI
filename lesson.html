@@ -1,0 +1,113 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson | MediVision AI</title>
+    <link rel="stylesheet" href="study-style.css">
+</head>
+<body class="study-page">
+
+<header class="study-navbar">
+    <a href="index.html" class="brand">MediVision <span>AI</span></a>
+    <a href="study.html" class="back-home">← Back to Study Phase</a>
+</header>
+
+<main class="lesson-container">
+
+    <p class="eyebrow">MEDIVISION AI · STUDY PHASE</p>
+
+    <h1 id="lesson-title">Loading lesson...</h1>
+
+    <div id="lesson-content"></div>
+
+    <div class="lesson-actions">
+        <button id="complete-button" class="complete-button">
+            Mark as Completed
+        </button>
+        <a href="study.html" class="back-home">Back to All Parts</a>
+    </div>
+
+    <p class="educational-note">
+        Educational content only. This material is not intended to
+        provide a medical diagnosis or replace professional medical advice.
+    </p>
+
+</main>
+
+<script src="study-data.js"></script>
+<script>
+const params = new URLSearchParams(window.location.search);
+const lessonId = params.get("id");
+
+let selectedLesson = null;
+
+studyParts.forEach(part => {
+    const found = part.lessons.find(lesson => lesson.id === lessonId);
+    if (found) selectedLesson = found;
+});
+
+const title = document.getElementById("lesson-title");
+const content = document.getElementById("lesson-content");
+const button = document.getElementById("complete-button");
+
+if (selectedLesson) {
+    document.title = selectedLesson.title + " | MediVision AI";
+    title.textContent = selectedLesson.title;
+
+    selectedLesson.content.forEach(section => {
+        const article = document.createElement("section");
+        article.className = "lesson-content-card";
+
+        const heading = document.createElement("h2");
+        heading.textContent = section[0];
+
+        const paragraph = document.createElement("p");
+        paragraph.textContent = section[1];
+
+        article.appendChild(heading);
+        article.appendChild(paragraph);
+        content.appendChild(article);
+    });
+
+    let completed = JSON.parse(
+        localStorage.getItem("mediVisionCompleted") || "[]"
+    );
+
+    function updateButton() {
+        if (completed.includes(lessonId)) {
+            button.textContent = "✓ Completed";
+            button.classList.add("is-completed");
+        } else {
+            button.textContent = "Mark as Completed";
+            button.classList.remove("is-completed");
+        }
+    }
+
+    button.addEventListener("click", () => {
+        if (!completed.includes(lessonId)) {
+            completed.push(lessonId);
+        } else {
+            completed = completed.filter(id => id !== lessonId);
+        }
+
+        localStorage.setItem(
+            "mediVisionCompleted",
+            JSON.stringify(completed)
+        );
+
+        updateButton();
+    });
+
+    updateButton();
+
+} else {
+    title.textContent = "Lesson Not Found";
+    content.textContent = "Please return to the Study Phase and select a lesson.";
+    button.style.display = "none";
+}
+</script>
+
+</body>
+</html>
