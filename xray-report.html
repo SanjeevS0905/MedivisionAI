@@ -1,0 +1,732 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>X-ray Report AI | MediVision AI</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    color: #edfafa;
+    font-family: 'Manrope', Arial, sans-serif;
+    background:
+        radial-gradient(circle at 10% 10%, #07515a 0%, transparent 25%),
+        radial-gradient(circle at 90% 90%, #073c43 0%, transparent 25%),
+        linear-gradient(135deg, #031c24, #02090d);
+}
+
+.page {
+    width: min(1150px, 94%);
+    margin: auto;
+    padding: 28px 0 65px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 45px;
+}
+
+.brand {
+    color: white;
+    text-decoration: none;
+    font-size: 19px;
+    font-weight: 800;
+}
+
+.brand span {
+    color: #42dfc7;
+}
+
+.back {
+    color: #d5eeee;
+    text-decoration: none;
+    border: 1px solid #31545a;
+    padding: 10px 17px;
+    border-radius: 30px;
+    font-size: 12px;
+}
+
+.heading {
+    text-align: center;
+    margin-bottom: 35px;
+}
+
+.heading small {
+    color: #42dfc7;
+    font-weight: 800;
+    letter-spacing: 3px;
+}
+
+.heading h1 {
+    font-size: clamp(32px, 5vw, 52px);
+    margin: 12px 0;
+}
+
+.heading h1 span {
+    color: #42dfc7;
+}
+
+.heading p {
+    color: #a9c5c9;
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+.panel {
+    background: rgba(5, 27, 30, 0.92);
+    border: 1px solid #24454a;
+    border-radius: 22px;
+    padding: 28px;
+    margin-bottom: 23px;
+}
+
+.section-title {
+    font-size: 19px;
+    margin-bottom: 17px;
+}
+
+.section-description {
+    color: #a9c4c8;
+    font-size: 12px;
+    margin-top: -9px;
+    margin-bottom: 20px;
+}
+
+.upload-area {
+    min-height: 185px;
+    border: 2px dashed #287d78;
+    border-radius: 17px;
+    background: #071f1d;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.25s;
+    padding: 20px;
+}
+
+.upload-area:hover,
+.upload-area.dragover {
+    background: #0a302c;
+    border-color: #42dfc7;
+}
+
+.upload-icon {
+    font-size: 43px;
+    margin-bottom: 12px;
+}
+
+.upload-area h3 {
+    font-size: 17px;
+    margin-bottom: 7px;
+}
+
+.upload-area p {
+    color: #9eb9bb;
+    font-size: 12px;
+}
+
+.upload-area input {
+    display: none;
+}
+
+.file-info {
+    color: #42dfc7;
+    font-size: 12px;
+    margin-top: 13px;
+    text-align: center;
+}
+
+.arrow {
+    text-align: center;
+    font-size: 25px;
+    color: #42dfc7;
+    margin: 12px 0;
+}
+
+.body-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 13px;
+}
+
+.body-card {
+    padding: 20px 12px;
+    border: 1px solid #315054;
+    border-radius: 14px;
+    background: #071b1d;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.body-card:hover {
+    border-color: #42dfc7;
+}
+
+.body-card.selected {
+    border: 2px solid #42dfc7;
+    background: #10332e;
+}
+
+.body-card.disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+}
+
+.body-card .emoji {
+    font-size: 28px;
+    margin-bottom: 9px;
+}
+
+.body-card h3 {
+    font-size: 14px;
+}
+
+.body-card p {
+    font-size: 10px;
+    color: #a7c2c3;
+    margin-top: 5px;
+}
+
+.model-box {
+    padding: 22px;
+    border-radius: 15px;
+    background: #082823;
+    border: 1px solid #24574d;
+    text-align: center;
+}
+
+.model-box h3 {
+    color: #42dfc7;
+    margin-bottom: 7px;
+}
+
+.model-box p {
+    font-size: 12px;
+    color: #b3ceca;
+    line-height: 1.7;
+}
+
+.status {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 6px 12px;
+    border-radius: 30px;
+    background: #164b3b;
+    color: #9ff5d6;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.analyse-button {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 13px;
+    background: linear-gradient(100deg, #19bca9, #42dfc7);
+    color: #03231e;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+.analyse-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.results {
+    display: none;
+}
+
+.result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.result-image {
+    width: 100%;
+    max-height: 430px;
+    object-fit: contain;
+    background: #02090d;
+    border-radius: 13px;
+    border: 1px solid #315054;
+}
+
+.result-item {
+    padding: 15px;
+    margin-top: 12px;
+    background: #092623;
+    border: 1px solid #28534a;
+    border-radius: 12px;
+    font-size: 12px;
+    line-height: 1.8;
+}
+
+.result-item strong {
+    color: #42dfc7;
+}
+
+.message {
+    margin-top: 15px;
+    font-size: 12px;
+    color: #a9c5c9;
+    text-align: center;
+}
+
+.notice {
+    text-align: center;
+    color: #8daeb1;
+    font-size: 10px;
+    line-height: 1.8;
+    margin-top: 35px;
+}
+
+@media(max-width: 700px) {
+    .body-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .result-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .panel {
+        padding: 19px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<main class="page">
+
+<header>
+    <a href="index.html" class="brand">
+        MediVision <span>AI</span>
+    </a>
+
+    <a href="categories.html" class="back">
+        ← Back to Categories
+    </a>
+</header>
+
+<section class="heading">
+    <small>INTELLIGENT MEDICAL IMAGING</small>
+
+    <h1>X-ray <span>Report AI</span></h1>
+
+    <p>
+        Upload an X-ray image and select its anatomical region.
+        MediVision AI will process the image using the corresponding
+        research model.
+    </p>
+</section>
+
+<!-- UPLOAD -->
+
+<section class="panel">
+
+    <h2 class="section-title">01. Upload X-ray Image</h2>
+
+    <p class="section-description">
+        Choose an X-ray image from your device.
+    </p>
+
+    <label class="upload-area" id="uploadArea">
+
+        <input type="file" id="xrayInput"
+               accept="image/png,image/jpeg,image/jpg">
+
+        <div class="upload-icon">☁</div>
+
+        <h3>Upload X-ray Image</h3>
+
+        <p>Click here or drag and drop your image</p>
+
+        <p>Supported formats: JPG, JPEG, PNG</p>
+
+    </label>
+
+    <div class="file-info" id="fileInfo">
+        No image selected
+    </div>
+
+    <div id="previewContainer" style="display:none; margin-top:20px;">
+        <img id="previewImage"
+             style="display:block; max-width:100%; max-height:350px;
+             margin:auto; border-radius:12px;">
+    </div>
+
+</section>
+
+<div class="arrow">↓</div>
+
+<!-- BODY PART -->
+
+<section class="panel">
+
+    <h2 class="section-title">02. Body-part Identification</h2>
+
+    <p class="section-description">
+        Select the anatomical region shown in your X-ray.
+    </p>
+
+    <div class="body-grid">
+
+        <div class="body-card selected"
+             data-part="hand"
+             onclick="selectBodyPart(this)">
+            <div class="emoji">✋</div>
+            <h3>Hand</h3>
+            <p>Fracture localisation</p>
+        </div>
+
+        <div class="body-card disabled">
+            <div class="emoji">🦶</div>
+            <h3>Ankle & Foot</h3>
+            <p>Coming soon</p>
+        </div>
+
+        <div class="body-card disabled">
+            <div class="emoji">🦵</div>
+            <h3>Knee</h3>
+            <p>Coming soon</p>
+        </div>
+
+        <div class="body-card disabled">
+            <div class="emoji">🫁</div>
+            <h3>Chest</h3>
+            <p>Separate research model required</p>
+        </div>
+
+        <div class="body-card disabled">
+            <div class="emoji">🦴</div>
+            <h3>Spine</h3>
+            <p>Coming soon</p>
+        </div>
+
+        <div class="body-card disabled">
+            <div class="emoji">＋</div>
+            <h3>Other</h3>
+            <p>Future models</p>
+        </div>
+
+    </div>
+
+</section>
+
+<div class="arrow">↓</div>
+
+<!-- AI MODEL -->
+
+<section class="panel">
+
+    <h2 class="section-title">03. AI Model Selection</h2>
+
+    <div class="model-box">
+
+        <h3 id="modelName">MediVision Hand Model</h3>
+
+        <p id="modelDescription">
+            YOLOv8n research model for candidate fracture localisation
+            in hand X-ray images.
+        </p>
+
+        <span class="status">HAND MODEL SELECTED</span>
+
+    </div>
+
+    <button class="analyse-button" id="analyseButton"
+            onclick="analyseXray()">
+        Analyse X-ray Image →
+    </button>
+
+    <div class="message" id="statusMessage"></div>
+
+</section>
+
+<div class="arrow">↓</div>
+
+<!-- RESULTS -->
+
+<section class="panel results" id="resultsSection">
+
+    <h2 class="section-title">04. MediVision AI Results</h2>
+
+    <p class="section-description">
+        Model-generated candidate regions for review.
+    </p>
+
+    <div class="result-grid">
+
+        <div>
+            <h3 style="margin-bottom:12px;">Annotated X-ray</h3>
+
+            <img id="resultImage" class="result-image"
+                 alt="AI annotated X-ray result">
+        </div>
+
+        <div>
+            <h3>Prediction Details</h3>
+
+            <div id="predictionDetails"></div>
+        </div>
+
+    </div>
+
+</section>
+
+<p class="notice">
+    EDUCATIONAL AND RESEARCH PROTOTYPE ONLY.<br>
+    MediVision AI predictions are not confirmed diagnoses.
+    They must not be used to make treatment decisions or replace
+    qualified medical professionals. Clinical use requires
+    independent validation and appropriate regulatory approval.
+</p>
+
+</main>
+
+<script>
+
+// BACKEND CONNECTION
+// Update this URL when your Python backend is deployed.
+ 
+const API_URL = "https://system-truth-anatomy-beginning.trycloudflare.com/predict";
+let selectedBodyPart = "hand";
+let selectedFile = null;
+
+const input = document.getElementById("xrayInput");
+const uploadArea = document.getElementById("uploadArea");
+
+input.addEventListener("change", function() {
+    if (this.files.length > 0) {
+        handleFile(this.files[0]);
+    }
+});
+
+function handleFile(file) {
+
+    const allowedTypes = [
+        "image/jpeg",
+        "image/png"
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+        alert("Please select a JPG, JPEG or PNG image.");
+        return;
+    }
+
+    selectedFile = file;
+
+    document.getElementById("fileInfo").textContent =
+        "Selected: " + file.name;
+
+    const reader = new FileReader();
+
+    reader.onload = function(event) {
+        document.getElementById("previewImage").src =
+            event.target.result;
+
+        document.getElementById("previewContainer").style.display =
+            "block";
+    };
+
+    reader.readAsDataURL(file);
+}
+
+// DRAG AND DROP
+
+uploadArea.addEventListener("dragover", function(event) {
+    event.preventDefault();
+    uploadArea.classList.add("dragover");
+});
+
+uploadArea.addEventListener("dragleave", function() {
+    uploadArea.classList.remove("dragover");
+});
+
+uploadArea.addEventListener("drop", function(event) {
+    event.preventDefault();
+    uploadArea.classList.remove("dragover");
+
+    const file = event.dataTransfer.files[0];
+
+    if (file) {
+        handleFile(file);
+    }
+});
+
+// BODY PART SELECTION
+
+function selectBodyPart(card) {
+
+    if (card.classList.contains("disabled")) {
+        return;
+    }
+
+    document.querySelectorAll(".body-card").forEach(item => {
+        item.classList.remove("selected");
+    });
+
+    card.classList.add("selected");
+
+    selectedBodyPart = card.dataset.part;
+}
+
+// SEND IMAGE TO AI BACKEND
+
+async function analyseXray() {
+
+    if (!selectedFile) {
+        alert("Please upload an X-ray image first.");
+        return;
+    }
+
+    if (selectedBodyPart !== "hand") {
+        alert("The Hand Fracture Model is currently the only available model.");
+        return;
+    }
+
+    const button = document.getElementById("analyseButton");
+    const status = document.getElementById("statusMessage");
+
+    button.disabled = true;
+    button.textContent = "Processing X-ray...";
+    status.textContent = "Connecting to MediVision AI model...";
+
+    const formData = new FormData();
+
+    formData.append("file", selectedFile);
+    formData.append("body_part", selectedBodyPart);
+
+    try {
+
+        const response = await fetch(API_URL, {
+            method: "POST",
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error("Backend returned HTTP " + response.status);
+        }
+
+        const data = await response.json();
+
+        if (!data.annotated_image || !Array.isArray(data.predictions)) {
+            throw new Error("Unexpected response from AI backend.");
+        }
+
+        displayResults(data);
+
+        status.textContent = "AI processing completed.";
+
+    } catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+            "Unable to connect to the AI backend. Check that your Python server is running.";
+
+        alert(
+            "AI connection failed.\n\n" +
+            error.message +
+            "\n\nThe Python backend must be running before analysis."
+        );
+
+    } finally {
+
+        button.disabled = false;
+        button.textContent = "Analyse X-ray Image →";
+
+    }
+}
+
+// DISPLAY MODEL RESULTS
+
+function displayResults(data) {
+
+    document.getElementById("resultsSection").style.display =
+        "block";
+
+    document.getElementById("resultImage").src =
+        data.annotated_image.startsWith("data:")
+        ? data.annotated_image
+        : "data:image/jpeg;base64," + data.annotated_image;
+
+    const details = document.getElementById("predictionDetails");
+
+    details.innerHTML = "";
+
+    if (data.predictions.length === 0) {
+
+        details.innerHTML = `
+            <div class="result-item">
+                No candidate fracture regions were detected
+                by the model at the configured threshold.
+                This does not rule out a fracture.
+            </div>
+        `;
+
+    } else {
+
+        data.predictions.forEach((prediction, index) => {
+
+            const confidence =
+                (Number(prediction.confidence) * 100).toFixed(2);
+
+            const item = document.createElement("div");
+
+            item.className = "result-item";
+
+            const title = document.createElement("strong");
+            title.textContent = "Prediction " + (index + 1);
+
+            const confidenceLine = document.createElement("p");
+            confidenceLine.textContent =
+                "Confidence: " + confidence + "%";
+
+            const labelLine = document.createElement("p");
+            labelLine.textContent =
+                "Model label: " + (prediction.label || "fracture");
+
+            item.appendChild(title);
+            item.appendChild(confidenceLine);
+            item.appendChild(labelLine);
+
+            details.appendChild(item);
+
+        });
+
+    }
+
+    document.getElementById("resultsSection").scrollIntoView({
+        behavior: "smooth"
+    });
+}
+
+</script>
+
+</body>
+</html>
