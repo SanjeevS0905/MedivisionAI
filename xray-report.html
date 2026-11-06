@@ -1,4 +1,4 @@
-
+ 
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,6 +39,7 @@ header {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 45px;
+    gap: 15px;
 }
 
 .brand {
@@ -48,7 +49,8 @@ header {
     font-weight: 800;
 }
 
-.brand span {
+.brand span,
+.heading h1 span {
     color: #42dfc7;
 }
 
@@ -75,10 +77,6 @@ header {
 .heading h1 {
     font-size: clamp(32px, 5vw, 52px);
     margin: 12px 0;
-}
-
-.heading h1 span {
-    color: #42dfc7;
 }
 
 .heading p {
@@ -152,6 +150,20 @@ header {
     font-size: 12px;
     margin-top: 13px;
     text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.preview-container {
+    display: none;
+    margin-top: 20px;
+}
+
+.preview-image {
+    display: block;
+    max-width: 100%;
+    max-height: 350px;
+    margin: auto;
+    border-radius: 12px;
 }
 
 .arrow {
@@ -292,6 +304,11 @@ header {
     font-size: 12px;
     color: #a9c5c9;
     text-align: center;
+    line-height: 1.7;
+}
+
+.message.error {
+    color: #ff9999;
 }
 
 .notice {
@@ -313,6 +330,10 @@ header {
 
     .panel {
         padding: 19px;
+    }
+
+    header {
+        flex-wrap: wrap;
     }
 }
 </style>
@@ -338,33 +359,31 @@ header {
     <h1>X-ray <span>Report AI</span></h1>
 
     <p>
-        Upload an X-ray image and select its anatomical region.
-        MediVision AI will process the image using the corresponding
-        research model.
+        Upload a hand X-ray image and select its anatomical region.
+        MediVision AI processes the image using its research model.
     </p>
 </section>
 
-<!-- UPLOAD -->
+<!-- 01. IMAGE UPLOAD -->
 
 <section class="panel">
 
     <h2 class="section-title">01. Upload X-ray Image</h2>
 
     <p class="section-description">
-        Choose an X-ray image from your device.
+        Choose a hand X-ray image from your device.
     </p>
 
     <label class="upload-area" id="uploadArea">
 
         <input type="file" id="xrayInput"
-               accept="image/png,image/jpeg,image/jpg">
+               accept=".jpg,.jpeg,.png,image/jpeg,image/png">
 
         <div class="upload-icon">☁</div>
 
         <h3>Upload X-ray Image</h3>
 
         <p>Click here or drag and drop your image</p>
-
         <p>Supported formats: JPG, JPEG, PNG</p>
 
     </label>
@@ -373,17 +392,17 @@ header {
         No image selected
     </div>
 
-    <div id="previewContainer" style="display:none; margin-top:20px;">
+    <div class="preview-container" id="previewContainer">
         <img id="previewImage"
-             style="display:block; max-width:100%; max-height:350px;
-             margin:auto; border-radius:12px;">
+             class="preview-image"
+             alt="Uploaded X-ray preview">
     </div>
 
 </section>
 
 <div class="arrow">↓</div>
 
-<!-- BODY PART -->
+<!-- 02. BODY PART -->
 
 <section class="panel">
 
@@ -397,10 +416,14 @@ header {
 
         <div class="body-card selected"
              data-part="hand"
+             role="button"
+             tabindex="0"
+             aria-pressed="true"
              onclick="selectBodyPart(this)">
+
             <div class="emoji">✋</div>
             <h3>Hand</h3>
-            <p>Fracture localisation</p>
+            <p>Candidate fracture localisation</p>
         </div>
 
         <div class="body-card disabled">
@@ -439,7 +462,7 @@ header {
 
 <div class="arrow">↓</div>
 
-<!-- AI MODEL -->
+<!-- 03. MODEL -->
 
 <section class="panel">
 
@@ -450,8 +473,8 @@ header {
         <h3 id="modelName">MediVision Hand Model</h3>
 
         <p id="modelDescription">
-            YOLOv8n research model for candidate fracture localisation
-            in hand X-ray images.
+            YOLOv8n research model for candidate fracture-region
+            localisation in hand X-ray images.
         </p>
 
         <span class="status">HAND MODEL SELECTED</span>
@@ -459,24 +482,26 @@ header {
     </div>
 
     <button class="analyse-button" id="analyseButton"
+            type="button"
             onclick="analyseXray()">
         Analyse X-ray Image →
     </button>
 
-    <div class="message" id="statusMessage"></div>
+    <div class="message" id="statusMessage"
+         role="status" aria-live="polite"></div>
 
 </section>
 
 <div class="arrow">↓</div>
 
-<!-- RESULTS -->
+<!-- 04. RESULTS -->
 
 <section class="panel results" id="resultsSection">
 
     <h2 class="section-title">04. MediVision AI Results</h2>
 
     <p class="section-description">
-        Model-generated candidate regions for review.
+        Model-generated candidate regions for educational review.
     </p>
 
     <div class="result-grid">
@@ -484,7 +509,8 @@ header {
         <div>
             <h3 style="margin-bottom:12px;">Annotated X-ray</h3>
 
-            <img id="resultImage" class="result-image"
+            <img id="resultImage"
+                 class="result-image"
                  alt="AI annotated X-ray result">
         </div>
 
@@ -500,74 +526,110 @@ header {
 
 <p class="notice">
     EDUCATIONAL AND RESEARCH PROTOTYPE ONLY.<br>
-    MediVision AI predictions are not confirmed diagnoses.
-    They must not be used to make treatment decisions or replace
-    qualified medical professionals. Clinical use requires
-    independent validation and appropriate regulatory approval.
+    Model scores are not calibrated probabilities or confirmed diagnoses.
+    Predictions must not be used to make treatment decisions or replace
+    qualified medical professionals. Clinical use requires independent
+    validation and appropriate regulatory approval.
 </p>
 
 </main>
 
 <script>
 
-// BACKEND CONNECTION
-// Update this URL when your Python backend is deployed.
- 
- const API_URL = "https://your-service-name.onrender.com/predict";
+// ==========================================
+// 1. BACKEND CONFIGURATION
+// ==========================================
+
+// Replace this with your actual Render service URL.
+// Example: https://medivisionai-xxxx.onrender.com/predict
+
+const API_URL = "https://YOUR-ACTUAL-RENDER-URL.onrender.com/predict";
+
 let selectedBodyPart = "hand";
 let selectedFile = null;
 
 const input = document.getElementById("xrayInput");
 const uploadArea = document.getElementById("uploadArea");
+const analyseButton = document.getElementById("analyseButton");
+const statusMessage = document.getElementById("statusMessage");
+
+// ==========================================
+// 2. FILE UPLOAD
+// ==========================================
 
 input.addEventListener("change", function() {
+
     if (this.files.length > 0) {
         handleFile(this.files[0]);
     }
+
 });
 
 function handleFile(file) {
 
-    const allowedTypes = [
-        "image/jpeg",
-        "image/png"
-    ];
+    const allowedTypes = ["image/jpeg", "image/png"];
+    const validExtension = /\.(jpg|jpeg|png)$/i.test(file.name);
 
-    if (!allowedTypes.includes(file.type)) {
+    if (!allowedTypes.includes(file.type) && !validExtension) {
         alert("Please select a JPG, JPEG or PNG image.");
+        input.value = "";
+        return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+        alert("Image size must be below 10 MB.");
+        input.value = "";
         return;
     }
 
     selectedFile = file;
 
     document.getElementById("fileInfo").textContent =
-        "Selected: " + file.name;
+        "Selected: " + file.name +
+        " (" + (file.size / (1024 * 1024)).toFixed(2) + " MB)";
 
     const reader = new FileReader();
 
     reader.onload = function(event) {
+
         document.getElementById("previewImage").src =
             event.target.result;
 
         document.getElementById("previewContainer").style.display =
             "block";
+
+    };
+
+    reader.onerror = function() {
+        alert("Unable to preview this image.");
     };
 
     reader.readAsDataURL(file);
+
+    document.getElementById("resultsSection").style.display = "none";
+    statusMessage.textContent = "";
+    statusMessage.classList.remove("error");
 }
 
-// DRAG AND DROP
+// ==========================================
+// 3. DRAG AND DROP
+// ==========================================
 
 uploadArea.addEventListener("dragover", function(event) {
+
     event.preventDefault();
     uploadArea.classList.add("dragover");
+
 });
 
 uploadArea.addEventListener("dragleave", function() {
+
     uploadArea.classList.remove("dragover");
+
 });
 
 uploadArea.addEventListener("drop", function(event) {
+
     event.preventDefault();
     uploadArea.classList.remove("dragover");
 
@@ -576,9 +638,12 @@ uploadArea.addEventListener("drop", function(event) {
     if (file) {
         handleFile(file);
     }
+
 });
 
-// BODY PART SELECTION
+// ==========================================
+// 4. BODY PART SELECTION
+// ==========================================
 
 function selectBodyPart(card) {
 
@@ -587,34 +652,54 @@ function selectBodyPart(card) {
     }
 
     document.querySelectorAll(".body-card").forEach(item => {
+
         item.classList.remove("selected");
+        item.setAttribute("aria-pressed", "false");
+
     });
 
     card.classList.add("selected");
+    card.setAttribute("aria-pressed", "true");
 
     selectedBodyPart = card.dataset.part;
+
 }
 
-// SEND IMAGE TO AI BACKEND
+// ==========================================
+// 5. ANALYSE IMAGE
+// ==========================================
 
 async function analyseXray() {
 
     if (!selectedFile) {
+
         alert("Please upload an X-ray image first.");
         return;
+
     }
 
     if (selectedBodyPart !== "hand") {
-        alert("The Hand Fracture Model is currently the only available model.");
+
+        alert("Only the Hand research model is currently available.");
         return;
+
     }
 
-    const button = document.getElementById("analyseButton");
-    const status = document.getElementById("statusMessage");
+    if (API_URL.includes("YOUR-ACTUAL-RENDER-URL")) {
 
-    button.disabled = true;
-    button.textContent = "Processing X-ray...";
-    status.textContent = "Connecting to MediVision AI model...";
+        alert("Please enter your actual Render backend URL in the code.");
+        return;
+
+    }
+
+    analyseButton.disabled = true;
+    analyseButton.textContent = "Processing X-ray...";
+
+    statusMessage.classList.remove("error");
+    statusMessage.textContent =
+        "Connecting to MediVision AI. The first request may take longer while the free server wakes up.";
+
+    document.getElementById("resultsSection").style.display = "none";
 
     const formData = new FormData();
 
@@ -629,87 +714,112 @@ async function analyseXray() {
         });
 
         if (!response.ok) {
-            throw new Error("Backend returned HTTP " + response.status);
+
+            let errorMessage = "Backend returned HTTP " + response.status;
+
+            try {
+                const errorData = await response.json();
+
+                if (errorData.detail) {
+                    errorMessage += ": " + errorData.detail;
+                }
+
+            } catch (ignored) {}
+
+            throw new Error(errorMessage);
+
         }
 
         const data = await response.json();
 
-        if (!data.annotated_image || !Array.isArray(data.predictions)) {
+        if (
+            !data.annotated_image ||
+            !Array.isArray(data.predictions)
+        ) {
+
             throw new Error("Unexpected response from AI backend.");
+
         }
 
         displayResults(data);
 
-        status.textContent = "AI processing completed.";
+        statusMessage.textContent =
+            "Image processing completed successfully.";
 
     } catch (error) {
 
-        console.error(error);
+        console.error("MediVision API error:", error);
 
-        status.textContent =
-            "Unable to connect to the AI backend. Check that your Python server is running.";
+        statusMessage.classList.add("error");
 
-        alert(
-            "AI connection failed.\n\n" +
-            error.message +
-            "\n\nThe Python backend must be running before analysis."
-        );
+        statusMessage.textContent =
+            "Processing failed: " + error.message;
 
     } finally {
 
-        button.disabled = false;
-        button.textContent = "Analyse X-ray Image →";
+        analyseButton.disabled = false;
+
+        analyseButton.textContent =
+            "Analyse X-ray Image →";
 
     }
+
 }
 
-// DISPLAY MODEL RESULTS
+// ==========================================
+// 6. DISPLAY RESULTS
+// ==========================================
 
 function displayResults(data) {
 
-    document.getElementById("resultsSection").style.display =
-        "block";
+    const resultsSection =
+        document.getElementById("resultsSection");
 
-    document.getElementById("resultImage").src =
-        data.annotated_image.startsWith("data:")
+    const resultImage =
+        document.getElementById("resultImage");
+
+    const details =
+        document.getElementById("predictionDetails");
+
+    resultImage.src = data.annotated_image.startsWith("data:")
         ? data.annotated_image
         : "data:image/jpeg;base64," + data.annotated_image;
 
-    const details = document.getElementById("predictionDetails");
-
-    details.innerHTML = "";
+    details.replaceChildren();
 
     if (data.predictions.length === 0) {
 
-        details.innerHTML = `
-            <div class="result-item">
-                No candidate fracture regions were detected
-                by the model at the configured threshold.
-                This does not rule out a fracture.
-            </div>
-        `;
+        const item = document.createElement("div");
+        item.className = "result-item";
+
+        item.textContent =
+            "No candidate regions were detected at the configured model threshold. This does not rule out a fracture.";
+
+        details.appendChild(item);
 
     } else {
 
         data.predictions.forEach((prediction, index) => {
 
-            const confidence =
-                (Number(prediction.confidence) * 100).toFixed(2);
-
             const item = document.createElement("div");
-
             item.className = "result-item";
 
             const title = document.createElement("strong");
-            title.textContent = "Prediction " + (index + 1);
+            title.textContent = "Candidate Region " + (index + 1);
+
+            const score = Number(prediction.confidence);
 
             const confidenceLine = document.createElement("p");
+
             confidenceLine.textContent =
-                "Confidence: " + confidence + "%";
+                "Model score: " +
+                (Number.isFinite(score) ? (score * 100).toFixed(2) + "%" : "Unavailable");
 
             const labelLine = document.createElement("p");
+
             labelLine.textContent =
-                "Model label: " + (prediction.label || "fracture");
+                "Model label: " +
+                (prediction.label || "Candidate region");
 
             item.appendChild(title);
             item.appendChild(confidenceLine);
@@ -721,9 +831,13 @@ function displayResults(data) {
 
     }
 
-    document.getElementById("resultsSection").scrollIntoView({
-        behavior: "smooth"
+    resultsSection.style.display = "block";
+
+    resultsSection.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
     });
+
 }
 
 </script>
