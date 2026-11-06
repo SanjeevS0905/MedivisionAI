@@ -55,14 +55,23 @@ except Exception as error:
         f"Could not load ONNX model: {error}"
     )
 
+
+# --------------------------------------------------
+# 3. MODEL SETTINGS
+# --------------------------------------------------
+
 IMAGE_SIZE = 640
+
 CONFIDENCE_THRESHOLD = 0.10
-IOU_THRESHOLD = 0.45
+
+# Updated from 0.45 to 0.35
+IOU_THRESHOLD = 0.35
+
 MAX_UPLOAD_SIZE = 10 * 1024 * 1024
 
 
 # --------------------------------------------------
-# 3. IOU CALCULATION
+# 4. IOU CALCULATION
 # --------------------------------------------------
 
 def calculate_iou(box, boxes):
@@ -93,7 +102,7 @@ def calculate_iou(box, boxes):
 
 
 # --------------------------------------------------
-# 4. IMAGE PREPROCESSING
+# 5. IMAGE PREPROCESSING
 # --------------------------------------------------
 
 def preprocess(image):
@@ -146,7 +155,7 @@ def preprocess(image):
 
 
 # --------------------------------------------------
-# 5. MODEL POSTPROCESSING
+# 6. MODEL POSTPROCESSING
 # --------------------------------------------------
 
 def postprocess(
@@ -176,6 +185,7 @@ def postprocess(
             "Unexpected model output format."
         )
 
+    # Extract confidence scores
     scores = predictions[:, 4]
 
     valid = (
@@ -202,6 +212,7 @@ def postprocess(
     boxes[:, 2] = center_x + box_width / 2
     boxes[:, 3] = center_y + box_height / 2
 
+    # Remove invalid boxes
     finite_boxes = np.all(
         np.isfinite(boxes),
         axis=1
@@ -213,8 +224,12 @@ def postprocess(
     if len(boxes) == 0:
         return []
 
-    # Non-maximum suppression
+    # --------------------------------------------------
+    # NON-MAXIMUM SUPPRESSION
+    # --------------------------------------------------
+
     order = np.argsort(scores)[::-1]
+
     keep = []
 
     while len(order) > 0 and len(keep) < 100:
@@ -232,11 +247,15 @@ def postprocess(
             boxes[remaining]
         )
 
+        # Suppress boxes with IoU >= 0.35
         order = remaining[
             ious < IOU_THRESHOLD
         ]
 
-    # Convert coordinates back to original image size
+    # --------------------------------------------------
+    # CONVERT COORDINATES TO ORIGINAL IMAGE SIZE
+    # --------------------------------------------------
+
     results = []
 
     width, height = image_size
@@ -275,7 +294,7 @@ def postprocess(
 
 
 # --------------------------------------------------
-# 6. HOME ENDPOINT
+# 7. HOME ENDPOINT
 # --------------------------------------------------
 
 @app.get("/")
@@ -289,7 +308,7 @@ def home():
 
 
 # --------------------------------------------------
-# 7. HEALTH CHECK
+# 8. HEALTH CHECK
 # --------------------------------------------------
 
 @app.get("/health")
@@ -302,7 +321,7 @@ def health():
 
 
 # --------------------------------------------------
-# 8. PREDICTION ENDPOINT
+# 9. PREDICTION ENDPOINT
 # --------------------------------------------------
 
 @app.post("/predict")
@@ -394,14 +413,13 @@ async def predict(
             detail="Image dimensions are too large."
         )
 
-    # Preprocess image
+    # Preprocess and run ONNX inference
     try:
 
         tensor, ratio, pad_x, pad_y = preprocess(
             image
         )
 
-        # ONNX inference
         output = session.run(
             None,
             {
@@ -409,7 +427,6 @@ async def predict(
             }
         )[0]
 
-        # Process predictions
         predictions = postprocess(
             output,
             ratio,
@@ -425,7 +442,10 @@ async def predict(
             detail="Image analysis failed. Please try another image."
         )
 
-    # Draw candidate regions
+    # --------------------------------------------------
+    # 10. DRAW CANDIDATE REGIONS
+    # --------------------------------------------------
+
     draw = ImageDraw.Draw(image)
 
     for prediction in predictions:
@@ -436,7 +456,10 @@ async def predict(
             width=3
         )
 
-    # Encode annotated image
+    # --------------------------------------------------
+    # 11. ENCODE ANNOTATED IMAGE
+    # --------------------------------------------------
+
     buffer = io.BytesIO()
 
     image.save(
@@ -449,11 +472,15 @@ async def predict(
         buffer.getvalue()
     ).decode("utf-8")
 
-    # API response
+    # --------------------------------------------------
+    # 12. API RESPONSE
+    # --------------------------------------------------
+
     return {
         "annotated_image": (
             "data:image/jpeg;base64," + encoded
         ),
+
         "predictions": [
             {
                 "confidence": item["confidence"],
@@ -461,7 +488,9 @@ async def predict(
             }
             for item in predictions
         ],
+
         "total_regions": len(predictions),
+
         "message": (
             "Candidate regions detected."
             if predictions
