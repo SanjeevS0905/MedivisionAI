@@ -1,6 +1,6 @@
  
-import io
 import os
+import io
 import base64
 
 import numpy as np
@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 # --------------------------------------------------
-# 1. APPLICATION CONFIGURATION
+# 1. APPLICATION
 # --------------------------------------------------
 
 app = FastAPI(title="MediVision AI API")
@@ -27,23 +27,15 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+
+# --------------------------------------------------
+# 2. MODEL LOADING
+# --------------------------------------------------
+
 MODEL_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "best.onnx"
 )
-
-IMAGE_SIZE = 640
-CONFIDENCE_THRESHOLD = 0.10
-IOU_THRESHOLD = 0.45
-MAX_FILE_SIZE = 10 * 1024 * 1024
-MAX_IMAGE_PIXELS = 25_000_000
-
-Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
-
-
-# --------------------------------------------------
-# 2. LOAD ONNX MODEL
-# --------------------------------------------------
 
 if not os.path.isfile(MODEL_PATH):
     raise RuntimeError(
@@ -58,12 +50,15 @@ try:
 
     input_name = session.get_inputs()[0].name
 
-    print("MediVision ONNX model loaded successfully.")
-
 except Exception as error:
     raise RuntimeError(
         f"Could not load ONNX model: {error}"
     )
+
+IMAGE_SIZE = 640
+CONFIDENCE_THRESHOLD = 0.10
+IOU_THRESHOLD = 0.45
+MAX_UPLOAD_SIZE = 10 * 1024 * 1024
 
 
 # --------------------------------------------------
@@ -74,7 +69,6 @@ def calculate_iou(box, boxes):
 
     x1 = np.maximum(box[0], boxes[:, 0])
     y1 = np.maximum(box[1], boxes[:, 1])
-
     x2 = np.minimum(box[2], boxes[:, 2])
     y2 = np.minimum(box[3], boxes[:, 3])
 
@@ -84,13 +78,13 @@ def calculate_iou(box, boxes):
     )
 
     area1 = (
-        max(0, box[2] - box[0]) *
-        max(0, box[3] - box[1])
+        (box[2] - box[0]) *
+        (box[3] - box[1])
     )
 
     area2 = (
-        np.maximum(0, boxes[:, 2] - boxes[:, 0]) *
-        np.maximum(0, boxes[:, 3] - boxes[:, 1])
+        (boxes[:, 2] - boxes[:, 0]) *
+        (boxes[:, 3] - boxes[:, 1])
     )
 
     union = area1 + area2 - intersection
@@ -152,7 +146,7 @@ def preprocess(image):
 
 
 # --------------------------------------------------
-# 5. YOLO POSTPROCESSING
+# 5. MODEL POSTPROCESSING
 # --------------------------------------------------
 
 def postprocess(
@@ -165,49 +159,29 @@ def postprocess(
 
     predictions = np.asarray(output)
 
-    # Expected model output:
-    # (1, 5, 8400) or (5, 8400)
-
+    # Expected model output: (1, 5, 8400)
     if predictions.ndim == 3:
-        if predictions.shape[0] != 1:
-            raise ValueError(
-                "Unexpected ONNX batch dimension."
-            )
-
         predictions = predictions[0]
 
     if predictions.ndim != 2:
         raise ValueError(
-            f"Unexpected ONNX output shape: {predictions.shape}"
+            "Unexpected model output dimensions."
         )
 
     if predictions.shape[0] == 5:
         predictions = predictions.T
 
-    elif predictions.shape[1] != 5:
+    if predictions.shape[1] != 5:
         raise ValueError(
-            f"Expected 5 output channels, got {predictions.shape}"
+            "Unexpected model output format."
         )
-
-    predictions = predictions.astype(
-        np.float32,
-        copy=False
-    )
-
-    # Remove invalid numerical predictions.
-    valid_numbers = np.all(
-        np.isfinite(predictions),
-        axis=1
-    )
-
-    predictions = predictions[valid_numbers]
-
-    if len(predictions) == 0:
-        return []
 
     scores = predictions[:, 4]
 
-    valid = scores >= CONFIDENCE_THRESHOLD
+    valid = (
+        np.isfinite(scores) &
+        (scores >= CONFIDENCE_THRESHOLD)
+    )
 
     predictions = predictions[valid]
     scores = scores[valid]
@@ -215,21 +189,32 @@ def postprocess(
     if len(predictions) == 0:
         return []
 
-    # Convert YOLO centre-format boxes:
-    # cx, cy, width, height
-    # into x1, y1, x2, y2.
-
+    # Convert centre-based boxes to corner coordinates
     boxes = predictions[:, :4].copy()
 
-    boxes[:, 0] = predictions[:, 0] - predictions[:, 2] / 2
-    boxes[:, 1] = predictions[:, 1] - predictions[:, 3] / 2
-    boxes[:, 2] = predictions[:, 0] + predictions[:, 2] / 2
-    boxes[:, 3] = predictions[:, 1] + predictions[:, 3] / 2
+    center_x = boxes[:, 0].copy()
+    center_y = boxes[:, 1].copy()
+    box_width = boxes[:, 2].copy()
+    box_height = boxes[:, 3].copy()
 
-    # Non-Maximum Suppression
+    boxes[:, 0] = center_x - box_width / 2
+    boxes[:, 1] = center_y - box_height / 2
+    boxes[:, 2] = center_x + box_width / 2
+    boxes[:, 3] = center_y + box_height / 2
 
+    finite_boxes = np.all(
+        np.isfinite(boxes),
+        axis=1
+    )
+
+    boxes = boxes[finite_boxes]
+    scores = scores[finite_boxes]
+
+    if len(boxes) == 0:
+        return []
+
+    # Non-maximum suppression
     order = np.argsort(scores)[::-1]
-
     keep = []
 
     while len(order) > 0 and len(keep) < 100:
@@ -251,8 +236,7 @@ def postprocess(
             ious < IOU_THRESHOLD
         ]
 
-    # Convert boxes back to original image coordinates.
-
+    # Convert coordinates back to original image size
     results = []
 
     width, height = image_size
@@ -263,13 +247,11 @@ def postprocess(
 
         x1 = (x1 - pad_x) / ratio
         y1 = (y1 - pad_y) / ratio
-
         x2 = (x2 - pad_x) / ratio
         y2 = (y2 - pad_y) / ratio
 
         x1 = max(0, min(width, x1))
         y1 = max(0, min(height, y1))
-
         x2 = max(0, min(width, x2))
         y2 = max(0, min(height, y2))
 
@@ -277,13 +259,14 @@ def postprocess(
 
             results.append({
                 "box": [
-                    int(round(x1)),
-                    int(round(y1)),
-                    int(round(x2)),
-                    int(round(y2))
+                    int(x1),
+                    int(y1),
+                    int(x2),
+                    int(y2)
                 ],
                 "confidence": round(
-                    float(scores[index]), 4
+                    float(scores[index]),
+                    4
                 ),
                 "label": "Candidate region"
             })
@@ -299,7 +282,9 @@ def postprocess(
 def home():
 
     return {
-        "message": "MediVision AI API is running"
+        "message": "MediVision AI API is running",
+        "model": "YOLOv8 ONNX",
+        "supported_body_part": "hand"
     }
 
 
@@ -312,13 +297,12 @@ def health():
 
     return {
         "status": "MediVision AI backend is running",
-        "model": "ONNX",
         "model_loaded": session is not None
     }
 
 
 # --------------------------------------------------
-# 8. X-RAY PREDICTION ENDPOINT
+# 8. PREDICTION ENDPOINT
 # --------------------------------------------------
 
 @app.post("/predict")
@@ -327,17 +311,15 @@ async def predict(
     body_part: str = Form(...)
 ):
 
-    # Check selected body part.
-
-    if body_part.lower() != "hand":
+    # Check supported body part
+    if body_part.strip().lower() != "hand":
 
         raise HTTPException(
             status_code=400,
             detail="Only hand X-rays are supported."
         )
 
-    # Check declared file type.
-
+    # Check declared content type
     if file.content_type not in [
         "image/jpeg",
         "image/png"
@@ -345,21 +327,13 @@ async def predict(
 
         raise HTTPException(
             status_code=400,
-            detail="Please upload a JPG or PNG image."
+            detail="Upload a JPG or PNG image."
         )
 
-    # Read at most 10 MB plus one byte.
-
+    # Read at most 10 MB plus one byte
     image_bytes = await file.read(
-        MAX_FILE_SIZE + 1
+        MAX_UPLOAD_SIZE + 1
     )
-
-    if len(image_bytes) > MAX_FILE_SIZE:
-
-        raise HTTPException(
-            status_code=413,
-            detail="Image exceeds the 10 MB limit."
-        )
 
     if not image_bytes:
 
@@ -368,52 +342,66 @@ async def predict(
             detail="The uploaded file is empty."
         )
 
-    # Verify that the file is a valid image.
+    if len(image_bytes) > MAX_UPLOAD_SIZE:
 
+        raise HTTPException(
+            status_code=413,
+            detail="Image exceeds the 10 MB limit."
+        )
+
+    # Validate actual image format
     try:
 
         with Image.open(
             io.BytesIO(image_bytes)
-        ) as uploaded_image:
+        ) as check_image:
 
-            if uploaded_image.format not in [
+            if check_image.format not in [
                 "JPEG",
                 "PNG"
             ]:
 
                 raise HTTPException(
                     status_code=400,
-                    detail="Only JPEG and PNG images are supported."
+                    detail="Only JPG and PNG images are supported."
                 )
 
-            uploaded_image.verify()
+            check_image.verify()
 
-        with Image.open(
+        image = Image.open(
             io.BytesIO(image_bytes)
-        ) as uploaded_image:
-
-            image = uploaded_image.convert("RGB")
+        ).convert("RGB")
 
     except HTTPException:
         raise
 
-    except Exception:
+    except (
+        UnidentifiedImageError,
+        OSError,
+        Image.DecompressionBombError
+    ):
 
         raise HTTPException(
             status_code=400,
             detail="Invalid or unsupported image."
         )
 
-    # Preprocess image.
+    # Limit image dimensions
+    if image.width > 10000 or image.height > 10000:
 
+        raise HTTPException(
+            status_code=400,
+            detail="Image dimensions are too large."
+        )
+
+    # Preprocess image
     try:
 
         tensor, ratio, pad_x, pad_y = preprocess(
             image
         )
 
-        # Run ONNX inference.
-
+        # ONNX inference
         output = session.run(
             None,
             {
@@ -421,8 +409,7 @@ async def predict(
             }
         )[0]
 
-        # Decode predictions.
-
+        # Process predictions
         predictions = postprocess(
             output,
             ratio,
@@ -431,38 +418,28 @@ async def predict(
             image.size
         )
 
-    except Exception as error:
-
-        print("Prediction error:", str(error))
+    except Exception:
 
         raise HTTPException(
             status_code=500,
-            detail="Prediction failed. Check the backend logs."
+            detail="Image analysis failed. Please try another image."
         )
 
-    # Draw candidate regions.
-
-    annotated_image = image.copy()
-
-    draw = ImageDraw.Draw(
-        annotated_image
-    )
+    # Draw candidate regions
+    draw = ImageDraw.Draw(image)
 
     for prediction in predictions:
 
-        x1, y1, x2, y2 = prediction["box"]
-
         draw.rectangle(
-            (x1, y1, x2, y2),
+            prediction["box"],
             outline=(0, 255, 0),
             width=3
         )
 
-    # Encode annotated image.
-
+    # Encode annotated image
     buffer = io.BytesIO()
 
-    annotated_image.save(
+    image.save(
         buffer,
         format="JPEG",
         quality=90
@@ -472,18 +449,22 @@ async def predict(
         buffer.getvalue()
     ).decode("utf-8")
 
-    # Return website-compatible response.
-
+    # API response
     return {
         "annotated_image": (
             "data:image/jpeg;base64," + encoded
         ),
-
         "predictions": [
             {
                 "confidence": item["confidence"],
                 "label": item["label"]
             }
             for item in predictions
-        ]
+        ],
+        "total_regions": len(predictions),
+        "message": (
+            "Candidate regions detected."
+            if predictions
+            else "No candidate regions detected."
+        )
     }
