@@ -1,4 +1,4 @@
- 
+
 import os
 import io
 import base64
@@ -29,64 +29,41 @@ app.add_middleware(
 
 
 # --------------------------------------------------
-# 2. MODEL LOADING
+# 2. MODEL PATHS
 # --------------------------------------------------
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 MODEL_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
+    BASE_DIR,
     "best.onnx"
 )
 
-if not os.path.isfile(MODEL_PATH):
-    raise RuntimeError(
-        f"ONNX model not found: {MODEL_PATH}"
-    )
-
-try:
-    session = ort.InferenceSession(
-        MODEL_PATH,
-        providers=["CPUExecutionProvider"]
-    )
-
-    input_name = session.get_inputs()[0].name
- # LEG FRACTURE MODEL
 LEG_MODEL_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
+    BASE_DIR,
     "leg_fracture_model.onnx"
 )
 
-leg_session = ort.InferenceSession(
-    LEG_MODEL_PATH,
-    providers=["CPUExecutionProvider"]
-)
 
-leg_input_name = leg_session.get_inputs()[0].name
+# --------------------------------------------------
+# 3. LOAD MODELS
+# --------------------------------------------------
 
-except Exception as error:
+if not os.path.isfile(MODEL_PATH):
     raise RuntimeError(
-        f"Could not load ONNX model: {error}"
+        f"Hand ONNX model not found: {MODEL_PATH}"
     )
 
-
-# --------------------------------------------------
-# 3. MODEL SETTINGS
-# --------------------------------------------------
-
-IMAGE_SIZE = 640
 try:
-    # HAND FRACTURE MODEL
+    # HAND MODEL
     session = ort.InferenceSession(
         MODEL_PATH,
         providers=["CPUExecutionProvider"]
     )
+
     input_name = session.get_inputs()[0].name
 
-    # LEG FRACTURE MODEL
-    LEG_MODEL_PATH = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "leg_fracture_model.onnx"
-    )
-
+    # LEG MODEL
     if not os.path.isfile(LEG_MODEL_PATH):
         raise RuntimeError(
             f"Leg ONNX model not found: {LEG_MODEL_PATH}"
@@ -96,6 +73,7 @@ try:
         LEG_MODEL_PATH,
         providers=["CPUExecutionProvider"]
     )
+
     leg_input_name = leg_session.get_inputs()[0].name
 
 except Exception as error:
@@ -103,16 +81,24 @@ except Exception as error:
         f"Could not load ONNX models: {error}"
     )
 
-CONFIDENCE_THRESHOLD = 0.10
 
-# Updated from 0.45 to 0.35
+# --------------------------------------------------
+# 4. MODEL SETTINGS
+# --------------------------------------------------
+
+IMAGE_SIZE = 640
+
+CONFIDENCE_THRESHOLD = 0.10
 IOU_THRESHOLD = 0.35
+
+LEG_CONFIDENCE_THRESHOLD = 0.25
+LEG_IOU_THRESHOLD = 0.50
 
 MAX_UPLOAD_SIZE = 10 * 1024 * 1024
 
 
 # --------------------------------------------------
-# 4. IOU CALCULATION
+# 5. IOU CALCULATION
 # --------------------------------------------------
 
 def calculate_iou(box, boxes):
@@ -143,7 +129,7 @@ def calculate_iou(box, boxes):
 
 
 # --------------------------------------------------
-# 5. IMAGE PREPROCESSING
+# 6. IMAGE PREPROCESSING
 # --------------------------------------------------
 
 def preprocess(image):
@@ -196,17 +182,23 @@ def preprocess(image):
 
 
 # --------------------------------------------------
-# 6. MODEL POSTPROCESSING
+# 7. MODEL POSTPROCESSING
 # --------------------------------------------------
 
- def postprocess(output, ratio, pad_x, pad_y, image_size,
-                confidence_threshold= confidence_threshold,
-                iou_threshold=iou_threshold ,
-                "label": label):
+def postprocess(
+    output,
+    ratio,
+    pad_x,
+    pad_y,
+    image_size,
+    confidence_threshold=CONFIDENCE_THRESHOLD,
+    iou_threshold=IOU_THRESHOLD,
+    label="Candidate region"
+):
 
     predictions = np.asarray(output)
 
-    # Expected model output: (1, 5, 8400)
+    # Expected output: (1, 5, 8400)
     if predictions.ndim == 3:
         predictions = predictions[0]
 
@@ -223,12 +215,12 @@ def preprocess(image):
             "Unexpected model output format."
         )
 
-    # Extract confidence scores
+    # Confidence filtering
     scores = predictions[:, 4]
 
     valid = (
         np.isfinite(scores) &
-        (scores >= CONFIDENCE_THRESHOLD)
+        (scores >= confidence_threshold)
     )
 
     predictions = predictions[valid]
@@ -237,7 +229,7 @@ def preprocess(image):
     if len(predictions) == 0:
         return []
 
-    # Convert centre-based boxes to corner coordinates
+    # Convert centre coordinates to corner coordinates
     boxes = predictions[:, :4].copy()
 
     center_x = boxes[:, 0].copy()
@@ -262,10 +254,7 @@ def preprocess(image):
     if len(boxes) == 0:
         return []
 
-    # --------------------------------------------------
-    # NON-MAXIMUM SUPPRESSION
-    # --------------------------------------------------
-
+    # Non-maximum suppression
     order = np.argsort(scores)[::-1]
 
     keep = []
@@ -285,15 +274,11 @@ def preprocess(image):
             boxes[remaining]
         )
 
-        # Suppress boxes with IoU >= 0.35
         order = remaining[
-            ious < IOU_THRESHOLD
+            ious < iou_threshold
         ]
 
-    # --------------------------------------------------
-    # CONVERT COORDINATES TO ORIGINAL IMAGE SIZE
-    # --------------------------------------------------
-
+    # Convert coordinates to original image size
     results = []
 
     width, height = image_size
@@ -325,88 +310,43 @@ def preprocess(image):
                     float(scores[index]),
                     4
                 ),
-                "label": "Candidate region"
+                "label": label
             })
 
     return results
 
 
 # --------------------------------------------------
-# 7. HOME ENDPOINT
+# 8. IMAGE VALIDATION
 # --------------------------------------------------
 
-@app.get("/")
-def home():
+async def read_image(file):
 
-    return {
-        "message": "MediVision AI API is running",
-        "model": "YOLOv8 ONNX",
-        "supported_body_part": "hand"
-    }
-
-
-# --------------------------------------------------
-# 8. HEALTH CHECK
-# --------------------------------------------------
-
-@app.get("/health")
-def health():
-
-    return {
-        "status": "MediVision AI backend is running",
-        "model_loaded": session is not None
-    }
-
-
-# --------------------------------------------------
-# 9. PREDICTION ENDPOINT
-# --------------------------------------------------
-
-@app.post("/predict")
-async def predict(
-    file: UploadFile = File(...),
-    body_part: str = Form(...)
-):
-
-    # Check supported body part
-    if body_part.strip().lower() != "hand":
-
-        raise HTTPException(
-            status_code=400,
-            detail="Only hand X-rays are supported."
-        )
-
-    # Check declared content type
     if file.content_type not in [
         "image/jpeg",
         "image/png"
     ]:
-
         raise HTTPException(
             status_code=400,
             detail="Upload a JPG or PNG image."
         )
 
-    # Read at most 10 MB plus one byte
     image_bytes = await file.read(
         MAX_UPLOAD_SIZE + 1
     )
 
     if not image_bytes:
-
         raise HTTPException(
             status_code=400,
             detail="The uploaded file is empty."
         )
 
     if len(image_bytes) > MAX_UPLOAD_SIZE:
-
         raise HTTPException(
             status_code=413,
             detail="Image exceeds the 10 MB limit."
         )
 
-    # Validate actual image format
     try:
 
         with Image.open(
@@ -417,7 +357,6 @@ async def predict(
                 "JPEG",
                 "PNG"
             ]:
-
                 raise HTTPException(
                     status_code=400,
                     detail="Only JPG and PNG images are supported."
@@ -437,54 +376,58 @@ async def predict(
         OSError,
         Image.DecompressionBombError
     ):
-
         raise HTTPException(
             status_code=400,
             detail="Invalid or unsupported image."
         )
 
-    # Limit image dimensions
     if image.width > 10000 or image.height > 10000:
-
         raise HTTPException(
             status_code=400,
             detail="Image dimensions are too large."
         )
 
-    # Preprocess and run ONNX inference
-    try:
+    return image
 
-        tensor, ratio, pad_x, pad_y = preprocess(
-            image
-        )
 
-        output = session.run(
-            None,
-            {
-                input_name: tensor
-            }
-        )[0]
+# --------------------------------------------------
+# 9. COMMON PREDICTION FUNCTION
+# --------------------------------------------------
 
-        predictions = postprocess(
-            output,
-            ratio,
-            pad_x,
-            pad_y,
-            image.size
-        )
+def run_prediction(
+    image,
+    model_session,
+    model_input_name,
+    confidence_threshold,
+    iou_threshold,
+    label
+):
 
-    except Exception:
+    tensor, ratio, pad_x, pad_y = preprocess(image)
 
-        raise HTTPException(
-            status_code=500,
-            detail="Image analysis failed. Please try another image."
-        )
+    output = model_session.run(
+        None,
+        {
+            model_input_name: tensor
+        }
+    )[0]
 
-    # --------------------------------------------------
-    # 10. DRAW CANDIDATE REGIONS
-    # --------------------------------------------------
+    predictions = postprocess(
+        output,
+        ratio,
+        pad_x,
+        pad_y,
+        image.size,
+        confidence_threshold=confidence_threshold,
+        iou_threshold=iou_threshold,
+        label=label
+    )
 
-    draw = ImageDraw.Draw(image)
+    annotated_image = image.copy()
+
+    draw = ImageDraw.Draw(
+        annotated_image
+    )
 
     for prediction in predictions:
 
@@ -494,13 +437,9 @@ async def predict(
             width=3
         )
 
-    # --------------------------------------------------
-    # 11. ENCODE ANNOTATED IMAGE
-    # --------------------------------------------------
-
     buffer = io.BytesIO()
 
-    image.save(
+    annotated_image.save(
         buffer,
         format="JPEG",
         quality=90
@@ -510,15 +449,10 @@ async def predict(
         buffer.getvalue()
     ).decode("utf-8")
 
-    # --------------------------------------------------
-    # 12. API RESPONSE
-    # --------------------------------------------------
-
     return {
         "annotated_image": (
             "data:image/jpeg;base64," + encoded
         ),
-
         "predictions": [
             {
                 "confidence": item["confidence"],
@@ -526,86 +460,106 @@ async def predict(
             }
             for item in predictions
         ],
-
         "total_regions": len(predictions),
-
         "message": (
             "Candidate regions detected."
             if predictions
             else "No candidate regions detected."
-        ) 
+        )
     }
 
-@app.post("/predict/leg")
-async def predict_leg(file: UploadFile = File(...)):
 
-    if file.content_type not in ["image/jpeg", "image/png"]:
-        raise HTTPException(
-            status_code=400,
-            detail="Only JPEG and PNG images are supported."
-        )
+# --------------------------------------------------
+# 10. HOME ENDPOINT
+# --------------------------------------------------
 
-    contents = await file.read()
-
-    if len(contents) > MAX_UPLOAD_SIZE:
-        raise HTTPException(
-            status_code=413,
-            detail="Image exceeds the 10 MB limit."
-        )
-
-    try:
-        image = Image.open(io.BytesIO(contents)).convert("RGB")
-    except UnidentifiedImageError:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid image file."
-        )
-
-    tensor, ratio, pad_x, pad_y = preprocess(image)
-
-    outputs = leg_session.run(
-        None,
-        {leg_input_name: tensor}
-    )
-
-    predictions = postprocess(
-        outputs[0],
-        ratio,
-        pad_x,
-        pad_y,
-        image.size,
-        confidence_threshold=0.25,
-        iou_threshold=0.50,
-        label="Candidate fracture region"
-    )
-
-    annotated_image = image.copy()
-    draw = ImageDraw.Draw(annotated_image)
-
-    for item in predictions:
-        box = item["box"]
-        draw.rectangle(box, outline="green", width=3)
-
-    buffer = io.BytesIO()
-    annotated_image.save(buffer, format="JPEG", quality=90)
-
-    encoded = base64.b64encode(
-        buffer.getvalue()
-    ).decode("utf-8")
+@app.get("/")
+def home():
 
     return {
-        "annotated_image": "data:image/jpeg;base64," + encoded,
-        "predictions": [
-            {
-                "confidence": item["confidence"],
-                "label": item["label"]
-            }
-            for item in predictions
-        ],
-        "total_regions": len(predictions),
-        "message": (
-            "Candidate fracture regions detected."
-            if predictions
-            else "No candidate regions detected."
-        )
+        "message": "MediVision AI API is running",
+        "model": "YOLOv8 ONNX",
+        "supported_body_parts": [
+            "hand",
+            "leg"
+        ]
     }
+
+
+# --------------------------------------------------
+# 11. HEALTH CHECK
+# --------------------------------------------------
+
+@app.get("/health")
+def health():
+
+    return {
+        "status": "MediVision AI backend is running",
+        "hand_model_loaded": session is not None,
+        "leg_model_loaded": leg_session is not None
+    }
+
+
+# --------------------------------------------------
+# 12. HAND PREDICTION ENDPOINT
+# --------------------------------------------------
+
+@app.post("/predict")
+async def predict(
+    file: UploadFile = File(...),
+    body_part: str = Form(...)
+):
+
+    if body_part.strip().lower() != "hand":
+        raise HTTPException(
+            status_code=400,
+            detail="Use the hand prediction endpoint for hand images."
+        )
+
+    image = await read_image(file)
+
+    try:
+
+        return run_prediction(
+            image=image,
+            model_session=session,
+            model_input_name=input_name,
+            confidence_threshold=CONFIDENCE_THRESHOLD,
+            iou_threshold=IOU_THRESHOLD,
+            label="Candidate region"
+        )
+
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="Hand image analysis failed. Please try another image."
+        )
+
+
+# --------------------------------------------------
+# 13. LEG PREDICTION ENDPOINT
+# --------------------------------------------------
+
+@app.post("/predict/leg")
+async def predict_leg(
+    file: UploadFile = File(...)
+):
+
+    image = await read_image(file)
+
+    try:
+
+        return run_prediction(
+            image=image,
+            model_session=leg_session,
+            model_input_name=leg_input_name,
+            confidence_threshold=LEG_CONFIDENCE_THRESHOLD,
+            iou_threshold=LEG_IOU_THRESHOLD,
+            label="Candidate fracture region"
+        )
+
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="Leg image analysis failed. Please try another image."
+        )
