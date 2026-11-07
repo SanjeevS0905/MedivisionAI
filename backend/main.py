@@ -49,6 +49,18 @@ try:
     )
 
     input_name = session.get_inputs()[0].name
+ # LEG FRACTURE MODEL
+LEG_MODEL_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "leg_fracture_model.onnx"
+)
+
+leg_session = ort.InferenceSession(
+    LEG_MODEL_PATH,
+    providers=["CPUExecutionProvider"]
+)
+
+leg_input_name = leg_session.get_inputs()[0].name
 
 except Exception as error:
     raise RuntimeError(
@@ -158,13 +170,10 @@ def preprocess(image):
 # 6. MODEL POSTPROCESSING
 # --------------------------------------------------
 
-def postprocess(
-    output,
-    ratio,
-    pad_x,
-    pad_y,
-    image_size
-):
+ def postprocess(output, ratio, pad_x, pad_y, image_size,
+                confidence_threshold= confidence_threshold,
+                iou_threshold=iou_threshold ,
+                "label": label):
 
     predictions = np.asarray(output)
 
@@ -493,6 +502,80 @@ async def predict(
 
         "message": (
             "Candidate regions detected."
+            if predictions
+            else "No candidate regions detected."
+        ) 
+    }
+
+@app.post("/predict/leg")
+async def predict_leg(file: UploadFile = File(...)):
+
+    if file.content_type not in ["image/jpeg", "image/png"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Only JPEG and PNG images are supported."
+        )
+
+    contents = await file.read()
+
+    if len(contents) > MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail="Image exceeds the 10 MB limit."
+        )
+
+    try:
+        image = Image.open(io.BytesIO(contents)).convert("RGB")
+    except UnidentifiedImageError:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid image file."
+        )
+
+    tensor, ratio, pad_x, pad_y = preprocess(image)
+
+    outputs = leg_session.run(
+        None,
+        {leg_input_name: tensor}
+    )
+
+    predictions = postprocess(
+        outputs[0],
+        ratio,
+        pad_x,
+        pad_y,
+        image.size,
+        confidence_threshold=0.25,
+        iou_threshold=0.50,
+        label="Candidate fracture region"
+    )
+
+    annotated_image = image.copy()
+    draw = ImageDraw.Draw(annotated_image)
+
+    for item in predictions:
+        box = item["box"]
+        draw.rectangle(box, outline="green", width=3)
+
+    buffer = io.BytesIO()
+    annotated_image.save(buffer, format="JPEG", quality=90)
+
+    encoded = base64.b64encode(
+        buffer.getvalue()
+    ).decode("utf-8")
+
+    return {
+        "annotated_image": "data:image/jpeg;base64," + encoded,
+        "predictions": [
+            {
+                "confidence": item["confidence"],
+                "label": item["label"]
+            }
+            for item in predictions
+        ],
+        "total_regions": len(predictions),
+        "message": (
+            "Candidate fracture regions detected."
             if predictions
             else "No candidate regions detected."
         )
