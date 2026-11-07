@@ -73,6 +73,35 @@ except Exception as error:
 # --------------------------------------------------
 
 IMAGE_SIZE = 640
+try:
+    # HAND FRACTURE MODEL
+    session = ort.InferenceSession(
+        MODEL_PATH,
+        providers=["CPUExecutionProvider"]
+    )
+    input_name = session.get_inputs()[0].name
+
+    # LEG FRACTURE MODEL
+    LEG_MODEL_PATH = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "leg_fracture_model.onnx"
+    )
+
+    if not os.path.isfile(LEG_MODEL_PATH):
+        raise RuntimeError(
+            f"Leg ONNX model not found: {LEG_MODEL_PATH}"
+        )
+
+    leg_session = ort.InferenceSession(
+        LEG_MODEL_PATH,
+        providers=["CPUExecutionProvider"]
+    )
+    leg_input_name = leg_session.get_inputs()[0].name
+
+except Exception as error:
+    raise RuntimeError(
+        f"Could not load ONNX models: {error}"
+    )
 
 CONFIDENCE_THRESHOLD = 0.10
 
