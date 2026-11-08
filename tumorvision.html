@@ -1,0 +1,258 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TumorVision AI | MediVision AI</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: white;
+      font-family: Manrope, Arial, sans-serif;
+      background:
+        radial-gradient(circle at 8% 10%, #08bcb5 0%, transparent 22%),
+        radial-gradient(circle at 90% 85%, #087c75 0%, transparent 23%),
+        linear-gradient(135deg, #032e35, #071923 55%, #020407);
+    }
+
+    .page {
+      min-height: 100vh;
+      padding: 28px 7% 65px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 60px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .brand img {
+      width: 43px;
+      height: 43px;
+      padding: 3px;
+      object-fit: contain;
+      border-radius: 12px;
+      background: white;
+    }
+
+    .brand b { color: #43e4cc; }
+
+    .back-button {
+      padding: 10px 15px;
+      color: white;
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .heading {
+      max-width: 760px;
+      margin: 0 auto 45px;
+      text-align: center;
+    }
+
+    .eyebrow {
+      color: #7ff1df;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 12px 0;
+      font-family: "Berkshire Swash", cursive;
+      font-size: clamp(43px, 6vw, 75px);
+      font-weight: 400;
+    }
+
+    h1 span { color: #42dfc7; }
+
+    .description {
+      max-width: 610px;
+      margin: 18px auto 0;
+      color: #c4dddf;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .cards {
+      max-width: 1150px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 22px;
+    }
+
+    .card {
+      min-height: 245px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      color: #10303b;
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 23px;
+      background: #f4fbfa;
+      text-decoration: none;
+      box-shadow: 0 18px 35px rgba(0,0,0,.18);
+      transition: transform .2s, box-shadow .2s;
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 23px 40px rgba(0,0,0,.3);
+    }
+
+    .icon {
+      width: 55px;
+      height: 55px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 20px;
+      color: #087f83;
+      border-radius: 16px;
+      background: #d9f3ee;
+      font-size: 27px;
+    }
+
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 23px;
+      letter-spacing: -.04em;
+    }
+
+    .card p {
+      margin: 0;
+      color: #5d747d;
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    .open-link {
+      margin-top: auto;
+      padding-top: 22px;
+      color: #087e83;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .notice {
+      max-width: 760px;
+      margin: 45px auto 0;
+      color: #b5d7d7;
+      font-size: 10px;
+      line-height: 1.8;
+      text-align: center;
+    }
+
+    @media (max-width: 750px) {
+      .cards { grid-template-columns: 1fr; }
+      .card { min-height: 220px; }
+    }
+
+    @media (max-width: 520px) {
+      .page { padding: 22px 18px 50px; }
+      header { margin-bottom: 45px; }
+      .brand span { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+
+    <header>
+      <a class="brand" href="index.html">
+        <img src="Modern minimalist business logo.png" alt="MediVision AI logo">
+        <span>MediVision <b>AI</b></span>
+      </a>
+
+      <a class="back-button" href="categories.html">← Back to Categories</a>
+    </header>
+
+    <section class="heading">
+      <p class="eyebrow">Advanced Imaging Research Workspace</p>
+
+      <h1><span>TumorVision</span> AI</h1>
+
+      <p class="description">
+        Explore AI-assisted medical and biological imaging through
+        experimental image-analysis tools, research concepts, and
+        educational microscopy resources.
+      </p>
+    </section>
+
+    <section class="cards">
+
+      <a class="card" href="brain-mri.html">
+        <div class="icon">🧠</div>
+        <h2>Brain MRI Analysis</h2>
+        <p>
+          Explore brain MRI imaging and experimental AI-assisted
+          identification of regions of interest in research datasets.
+        </p>
+        <span class="open-link">Explore Brain MRI →</span>
+      </a>
+
+      <a class="card" href="lung-ct.html">
+        <div class="icon">🫁</div>
+        <h2>Lung CT Analysis</h2>
+        <p>
+          Learn about lung CT imaging and research-based AI methods
+          for identifying candidate areas for further study.
+        </p>
+        <span class="open-link">Explore Lung CT →</span>
+      </a>
+
+      <a class="card" href="biotissue.html">
+        <div class="icon">🔬</div>
+        <h2>Biological Sample Analysis</h2>
+        <p>
+          Explore image analysis of human, animal, and plant biological
+          samples using experimental computer-vision techniques.
+        </p>
+        <span class="open-link">Explore Biological Samples →</span>
+      </a>
+
+      <a class="card" href="microscope-finder.html">
+        <div class="icon">⚙</div>
+        <h2>AI Microscope Finder</h2>
+        <p>
+          Discover suitable microscope types based on sample category,
+          imaging requirements, and the level of detail needed.
+        </p>
+        <span class="open-link">Find a Suitable Microscope →</span>
+      </a>
+
+    </section>
+
+    <p class="notice">
+      Educational and research prototype only. Experimental outputs
+      are not medical diagnoses and must not be used to make clinical
+      decisions or replace qualified professionals.
+    </p>
+
+  </main>
+</body>
+</html>
