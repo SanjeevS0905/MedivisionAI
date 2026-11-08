@@ -563,3 +563,4 @@ async def predict_leg(
             status_code=500,
             detail="Leg image analysis failed. Please try another image."
         )
+# Auto-deploy test
